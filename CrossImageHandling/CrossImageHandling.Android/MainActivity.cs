@@ -9,8 +9,6 @@ using Android.OS;
 using System.Threading.Tasks;
 using System.IO;
 using Android.Content;
-using Plugin.CurrentActivity;
-using Plugin.Permissions;
 
 namespace CrossImageHandling.Droid
 {
@@ -28,7 +26,6 @@ namespace CrossImageHandling.Droid
 
             Xamarin.Essentials.Platform.Init(this, savedInstanceState);
             global::Xamarin.Forms.Forms.Init(this, savedInstanceState);
-            CrossCurrentActivity.Current.Init(this, savedInstanceState);
 
             LoadApplication(new App());
 
@@ -39,7 +36,6 @@ namespace CrossImageHandling.Droid
         {
             Xamarin.Essentials.Platform.OnRequestPermissionsResult(requestCode, permissions, grantResults);
 
-            PermissionsImplementation.Current.OnRequestPermissionsResult(requestCode, permissions, grantResults);
             base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
         }
 

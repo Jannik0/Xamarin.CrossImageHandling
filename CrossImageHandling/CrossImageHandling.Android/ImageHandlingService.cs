@@ -23,7 +23,6 @@ namespace CrossImageHandling.Droid
             MainActivity.Instance.PickImageTaskCompletionSource = new TaskCompletionSource<Stream>();
 
             return MainActivity.Instance.PickImageTaskCompletionSource.Task;
-
         }
 
         public int[] GetImageSizeFromStream(byte[] streamData)
