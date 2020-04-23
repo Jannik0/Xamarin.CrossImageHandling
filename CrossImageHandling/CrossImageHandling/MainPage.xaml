@@ -8,17 +8,22 @@
              ios:Page.UseSafeArea="true"
              x:Class="CrossImageHandling.MainPage">
 
-    <AbsoluteLayout>
-        <StackLayout>
-            <Button Text="Select Image" Clicked="OnSelectImageButtonClicked"/>
-            <Label x:Name="Info" FontSize="Medium"/>
-            <Image x:Name="Image1"/>
-            <Image x:Name="Image2"/>
-        </StackLayout>
-
-        <AbsoluteLayout AbsoluteLayout.LayoutBounds="0.0, 1.0, 1.0, 0.5" AbsoluteLayout.LayoutFlags="All">
-            <Image x:Name="Image3" AbsoluteLayout.LayoutBounds="0.0, 0.0, 1.0, 1.0" AbsoluteLayout.LayoutFlags="All"/>
-        </AbsoluteLayout>
-    </AbsoluteLayout>
+    <StackLayout Padding="5" HorizontalOptions="CenterAndExpand">
+        <Button Text="Select Image" HorizontalOptions="Center" Clicked="OnSelectImageButtonClicked"/>
+        <Label Text="{Binding Info}" FontSize="Medium" HorizontalTextAlignment="Center"/>
+        <ScrollView>
+            <StackLayout>
+                <Label Text="{Binding Info1}" FontSize="Small" HorizontalOptions="Start"/>
+                <ActivityIndicator IsRunning="True" WidthRequest="50" IsVisible="{Binding Busy1}"/>
+                <Image Source="{Binding Image1}"/>
+                <Label Text="{Binding Info2}" FontSize="Small" HorizontalOptions="Start"/>
+                <ActivityIndicator IsRunning="True" WidthRequest="50" IsVisible="{Binding Busy2}"/>
+                <Image Source="{Binding Image2}"/>
+                <Label Text="{Binding Info3}" FontSize="Small" HorizontalOptions="Start"/>
+                <ActivityIndicator IsRunning="True" WidthRequest="50" IsVisible="{Binding Busy3}"/>
+                <Image Source="{Binding Image3}"/>
+            </StackLayout>
+        </ScrollView>
+    </StackLayout>
 
 </ContentPage>

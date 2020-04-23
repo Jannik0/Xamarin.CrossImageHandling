@@ -1,20 +1,24 @@
 ﻿using System;
 using System.ComponentModel;
 using System.IO;
-using Plugin.Permissions;
-using Plugin.Permissions.Abstractions;
+using System.Threading.Tasks;
+using Xamarin.Essentials;
 using Xamarin.Forms;
 
 namespace CrossImageHandling
 {
     [DesignTimeVisible(false)]
-    public partial class MainPage : ContentPage
+    public partial class MainPage : ContentPage, INotifyPropertyChanged
     {
         private readonly IImageHandlingService imageHandlingService = DependencyService.Get<IImageHandlingService>();
+
+        private MainPageViewModel viewModel;
 
         public MainPage()
         {
             InitializeComponent();
+            viewModel = new MainPageViewModel();
+            BindingContext = viewModel;
         }
 
         async void OnSelectImageButtonClicked(object sender, EventArgs e)
@@ -25,33 +29,33 @@ namespace CrossImageHandling
             switch (Device.RuntimePlatform)
             {
                 case Device.Android:
-                    if (await CrossPermissions.Current.CheckPermissionStatusAsync(Permission.Storage) == PermissionStatus.Granted)
+                    if (await Permissions.CheckStatusAsync<Permissions.StorageWrite>() == PermissionStatus.Granted)
                     {
-                        PerformTests();
+                        await Task.Run(() => PerformTests());
                     }
                     else
                     {
-                        await CrossPermissions.Current.RequestPermissionsAsync(Permission.Storage);
+                        await Permissions.RequestAsync<Permissions.StorageWrite>();
 
-                        if (await CrossPermissions.Current.CheckPermissionStatusAsync(Permission.Storage) == PermissionStatus.Granted)
-                            PerformTests();
+                        if (await Permissions.CheckStatusAsync<Permissions.StorageWrite>() == PermissionStatus.Granted)
+                            await Task.Run(() => PerformTests());
                         else
-                            Info.Text = "Library access denied";
+                            viewModel.Info = "Library access denied";
                     }
                     break;
                 case Device.iOS:
-                    if (await CrossPermissions.Current.CheckPermissionStatusAsync(Permission.Photos) == PermissionStatus.Granted)
+                    if (await Permissions.CheckStatusAsync<Permissions.Photos>() == PermissionStatus.Granted)
                     {
-                        PerformTests();
+                        await Task.Run(() => PerformTests());
                     }
                     else
                     {
-                        await CrossPermissions.Current.RequestPermissionsAsync(Permission.Photos);
+                        await Permissions.RequestAsync<Permissions.Photos>();
 
-                        if (await CrossPermissions.Current.CheckPermissionStatusAsync(Permission.Photos) == PermissionStatus.Granted)
-                            PerformTests();
+                        if (await Permissions.CheckStatusAsync<Permissions.Photos>() == PermissionStatus.Granted)
+                            await Task.Run(() => PerformTests());
                         else
-                            Info.Text = "Library access denied";
+                            viewModel.Info = "Library access denied";
                     }
                     break;
             }
@@ -73,12 +77,20 @@ namespace CrossImageHandling
             }
             catch
             {
-                Info.Text = "Error: failed to load image file";
+                viewModel.Info = "Error: failed to load image file";
                 return;
             }
 
             if (pickImageFromGalleryStream != null)
             {
+                viewModel.Info = "Operations are running...";
+                viewModel.Info1 = "picked image:";
+                viewModel.Busy1 = true;
+                viewModel.Info2 = "edited image:";
+                viewModel.Busy2 = true;
+                viewModel.Info3 = "edited and resized image:";
+                viewModel.Busy3 = true;
+
                 //Convert and save the image stream for further usage
                 MemoryStream stream = new MemoryStream();
                 pickImageFromGalleryStream.CopyTo(stream);
@@ -87,22 +99,24 @@ namespace CrossImageHandling
                 stream.Dispose();
 
                 //display the selected image
-                Image1.Source = ImageSource.FromStream(() => new MemoryStream(streamData));
+                viewModel.Image1 = ImageSource.FromStream(() => new MemoryStream(streamData));
+                viewModel.Busy1 = false;
 
                 //get the image width and height in pixels
                 size = imageHandlingService.GetImageSizeFromStream(streamData);
 
                 //get the pixel data as an array in RGBA format
                 pixelData = imageHandlingService.GetImagePixelsFromStream(streamData);
-                //directly edit the pixel data (for demonstration purposes)
-                for (int i = 0; i < pixelData.Length; i += 10)
+                //directly edit the pixel data (for demonstration purposes remove red)
+                for (int i = 0; i < pixelData.Length; i += 4)
                     pixelData[i] = 0;
 
                 //convert the edited pixel data back into a stream object
                 streamData = imageHandlingService.GetImageStreamFromPixels(pixelData, size[0], size[1]);
 
                 //display the edited image
-                Image2.Source = ImageSource.FromStream(() => new MemoryStream(streamData));
+                viewModel.Image2 = ImageSource.FromStream(() => new MemoryStream(streamData));
+                viewModel.Busy2 = false;
 
                 //save the edited image to the gallery
                 bool success;
@@ -112,14 +126,15 @@ namespace CrossImageHandling
                 }
                 catch
                 {
-                    Info.Text = "Error: failed to save image file";
+                    viewModel.Info = "Error: failed to save image file";
                 }
 
-                //scale the edited image down to half its original size
-                streamData = imageHandlingService.GetImageStreamAtSizeFromStream(streamData, size[0] / 2, size[1] / 2);
+                //scale the edited image down to 500 pixels wide
+                streamData = imageHandlingService.GetImageStreamAtSizeFromStream(streamData, 500, (int)(size[1] / (size[0] / 500.0)));
 
                 //display the edited and resized image
-                Image3.Source = ImageSource.FromStream(() => new MemoryStream(streamData));
+                viewModel.Image3 = ImageSource.FromStream(() => new MemoryStream(streamData));
+                viewModel.Busy3 = false;
 
                 //save the edited and resized image
                 try
@@ -128,13 +143,13 @@ namespace CrossImageHandling
                 }
                 catch
                 {
-                    Info.Text = "Error: failed to save image file";
+                    viewModel.Info = "Error: failed to save image file";
                 }
 
-                Info.Text = "All operations completed successfully";
+                viewModel.Info = "All operations completed successfully";
             }
             else
-                Info.Text = "No image selected";
+                viewModel.Info = "No image selected";
         }
     }
 }
